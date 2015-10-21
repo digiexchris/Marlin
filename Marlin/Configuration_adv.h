@@ -36,16 +36,6 @@
   #define THERMAL_PROTECTION_BED_HYSTERESIS 2 // Degrees Celsius
 #endif
 
-#if ENABLED(PIDTEMP)
-  // this adds an experimental additional term to the heating power, proportional to the extrusion speed.
-  // if Kc is chosen well, the additional required power due to increased melting should be compensated.
-  #define PID_ADD_EXTRUSION_RATE
-  #if ENABLED(PID_ADD_EXTRUSION_RATE)
-    #define DEFAULT_Kc (100) //heating power=Kc*(e_speed)
-    #define LPQ_MAX_LEN 50
-  #endif
-#endif
-
 /**
  * Automatic Temperature:
  * The hotend target temperature is calculated by all the buffered lines of gcode.
@@ -56,6 +46,24 @@
  * Also, if the temperature is set to a value below mintemp, it will not be changed by autotemp.
  * On an Ultimaker, some initial testing worked with M109 S215 B260 F1 in the start.gcode
  */
+#if ENABLED(PIDTEMP)
+  // this adds an experimental additional term to the heating power, proportional to the extrusion speed.
+  // if Kc is chosen well, the additional required power due to increased melting should be compensated.
+  #define PID_ADD_EXTRUSION_RATE
+  #if ENABLED(PID_ADD_EXTRUSION_RATE)
+    #define DEFAULT_Kc (100) //heating power=Kc*(e_speed)
+    #define LPQ_MAX_LEN 50
+  #endif
+#endif
+
+
+//automatic temperature: The hot end target temperature is calculated by all the buffered lines of gcode.
+//The maximum buffered steps/sec of the extruder motor are called "se".
+//You enter the autotemp mode by a M109 S<mintemp> B<maxtemp> F<factor>
+// the target temperature is set to mintemp+factor*se[steps/sec] and limited by mintemp and maxtemp
+// you exit the value by any M109 without F*
+// Also, if the temperature is set to a value <mintemp, it is not changed by autotemp.
+// on an Ultimaker, some initial testing worked with M109 S215 B260 F1 in the start.gcode
 #define AUTOTEMP
 #if ENABLED(AUTOTEMP)
   #define AUTOTEMP_OLDWEIGHT 0.98
@@ -70,7 +78,7 @@
 //  extruder run-out prevention.
 //if the machine is idle, and the temperature over MINTEMP, every couple of SECONDS some filament is extruded
 //#define EXTRUDER_RUNOUT_PREVENT
-#define EXTRUDER_RUNOUT_MINTEMP 190
+#define EXTRUDER_RUNOUT_MINTEMP 210
 #define EXTRUDER_RUNOUT_SECONDS 30.
 #define EXTRUDER_RUNOUT_ESTEPS 14. //mm filament
 #define EXTRUDER_RUNOUT_SPEED 1500.  //extrusion speed
@@ -212,8 +220,8 @@
 //homing hits the endstop, then retracts by this distance, before it tries to slowly bump again:
 #define X_HOME_BUMP_MM 5
 #define Y_HOME_BUMP_MM 5
-#define Z_HOME_BUMP_MM 2
-#define HOMING_BUMP_DIVISOR {2, 2, 4}  // Re-Bump Speed Divisor (Divides the Homing Feedrate)
+#define Z_HOME_BUMP_MM 5 // deltas need the same for all three axis
+#define HOMING_BUMP_DIVISOR {10, 10, 10}  // Re-Bump Speed Divisor (Divides the Homing Feedrate)
 //#define QUICK_HOME  //if this is defined, if both x and y are to be homed, a diagonal move will be performed initially.
 
 // When G28 is called, this option will make Y home before X
@@ -240,7 +248,8 @@
 // @section lcd
 
 #if ENABLED(ULTIPANEL)
-  #define MANUAL_FEEDRATE {50*60, 50*60, 4*60, 60} // Feedrates for manual moves along X, Y, Z, E from panel
+  #define MANUAL_FEEDRATE_XYZ 50*60
+  #define MANUAL_FEEDRATE { MANUAL_FEEDRATE_XYZ, MANUAL_FEEDRATE_XYZ, MANUAL_FEEDRATE_XYZ, 60 } // Feedrates for manual moves along X, Y, Z, E from panel
   #define ULTIPANEL_FEEDMULTIPLY  // Comment to disable setting feedrate multiplier via encoder
 #endif
 
@@ -250,7 +259,8 @@
 #define DEFAULT_MINSEGMENTTIME        20000
 
 // If defined the movements slow down when the look ahead buffer is only half full
-#define SLOWDOWN
+// (don't use SLOWDOWN with DELTA because DELTA generates hundreds of segments per second)
+//#define SLOWDOWN
 
 // Frequency limit
 // See nophead's blog for more info
@@ -266,7 +276,7 @@
 #define MICROSTEP_MODES {16,16,16,16,16} // [1,2,4,8,16]
 
 // Motor Current setting (Only functional when motor driver current ref pins are connected to a digital trimpot on supported boards)
-#define DIGIPOT_MOTOR_CURRENT {135,135,135,135,135} // Values 0-255 (RAMBO 135 = ~0.75A, 185 = ~1A)
+#define DIGIPOT_MOTOR_CURRENT {185,185,185,185,185} // Values 0-255 (RAMBO 135 = ~0.75A, 185 = ~1A)
 
 // uncomment to enable an I2C based DIGIPOT like on the Azteeg X3 Pro
 //#define DIGIPOT_I2C
@@ -320,13 +330,13 @@
   #endif
 
   // This allows hosts to request long names for files and folders with M33
-  //#define LONG_FILENAME_HOST_SUPPORT
+  #define LONG_FILENAME_HOST_SUPPORT
 
   // This option allows you to abort SD printing when any endstop is triggered.
   // This feature must be enabled with "M540 S1" or from the LCD menu.
   // To have any effect, endstops must be enabled during SD printing.
   // With ENDSTOPS_ONLY_FOR_HOMING you must send "M120" to enable endstops.
-  //#define ABORT_ON_ENDSTOP_HIT_FEATURE_ENABLED
+  #define ABORT_ON_ENDSTOP_HIT_FEATURE_ENABLED
 
 #endif // SDSUPPORT
 
@@ -340,6 +350,7 @@
   // smaller font on the Info-screen uncomment the next line.
   //#define USE_SMALL_INFOFONT
 #endif // DOGLCD
+
 
 // @section more
 
@@ -361,7 +372,6 @@
 //#define BABYSTEPPING
 #if ENABLED(BABYSTEPPING)
   #define BABYSTEP_XY  //not only z, but also XY in the menu. more clutter, more functions
-                       //not implemented for CoreXY and deltabots!
   #define BABYSTEP_INVERT_Z false  //true for inverse movements in Z
   #define BABYSTEP_Z_MULTIPLICATOR 2 //faster z movements
 #endif
@@ -454,9 +464,6 @@ const unsigned int dropsegments=5; //everything with less than this number of st
     #define FILAMENTCHANGE_ZADD 10
     #define FILAMENTCHANGE_FIRSTRETRACT -2
     #define FILAMENTCHANGE_FINALRETRACT -100
-    #define AUTO_FILAMENT_CHANGE                //This extrude filament until you press the button on LCD
-    #define AUTO_FILAMENT_CHANGE_LENGTH 0.04    //Extrusion length on automatic extrusion loop
-    #define AUTO_FILAMENT_CHANGE_FEEDRATE 300   //Extrusion feedrate (mm/min) on automatic extrusion loop
   #endif
 #endif
 
