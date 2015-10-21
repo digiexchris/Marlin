@@ -344,6 +344,15 @@ Here are some standard links for getting your machine calibrated:
   // Print surface diameter/2 minus unreachable space (avoid collisions with vertical towers).
   #define DELTA_PRINTABLE_RADIUS 164
 
+//check out M665 and M666, these can be adjusted in firmware
+//Delta clears out the endstop adjustments so don't bother
+  #define DELTA_RADIUS_TRIM_TOWER_1 0.050
+  #define DELTA_RADIUS_TRIM_TOWER_2 -0.310
+  #define DELTA_RADIUS_TRIM_TOWER_3 -0.190
+  #define DELTA_DIAGONAL_ROD_TRIM_TOWER_1 0.0
+  #define DELTA_DIAGONAL_ROD_TRIM_TOWER_2 0.0
+  #define DELTA_DIAGONAL_ROD_TRIM_TOWER_3 0.0
+
 #endif
 
 // Enable this option for Toshiba steppers
